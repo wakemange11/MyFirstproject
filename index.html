@@ -232,7 +232,7 @@
 </head>
 <body>
 
-  <audio autoplay loop muted>
+  <audio id="audio" loop>
      <source src="solide.mp3" type="audio/mpeg"> 
   </audio>
   <div class="cursor" id="cursor"></div>
@@ -283,7 +283,7 @@
   <nav id="nav">
     <button class="nav-btn" id="btnPrev" disabled aria-label="Précédent">&#8592;</button>
     <div id="dots"></div>
-    <button class="nav-btn" id="btnNext" aria-label="Suivant" onclick="document.querySelector('audio').muted=false">&#8594;</button>
+    <button class="nav-btn" id="btnNext" aria-label="Suivant" onclick="document.getElementById('audio').play()">&#8594;</button>
   </nav>
 
   <script>
