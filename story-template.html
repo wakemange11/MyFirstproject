@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon Histoire</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1610;
+      --parchment: #f5f0e8;
+      --gold: #c8a96e;
+      --muted: #7a7060;
+      --slide-duration: 800ms;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'Jost', sans-serif;
+      overflow: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease, opacity 0.3s;
+      transform: translate(-50%, -50%);
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 32px; height: 32px;
+      border: 1px solid rgba(200,169,110,0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.35s ease, opacity 0.3s;
+      transform: translate(-50%, -50%);
+    }
+
+    /* ── SLIDES ── */
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem clamp(2rem, 10vw, 12rem);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--slide-duration) ease;
+      text-align: center;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Individual slide backgrounds */
+    .slide:nth-child(1) { background: radial-gradient(ellipse at 60% 40%, #2a2318 0%, #0e0c08 70%); }
+    .slide:nth-child(2) { background: radial-gradient(ellipse at 30% 60%, #1a1f2a 0%, #090b10 70%); }
+    .slide:nth-child(3) { background: radial-gradient(ellipse at 70% 30%, #1f1a1a 0%, #0d0808 70%); }
+    .slide:nth-child(4) { background: radial-gradient(ellipse at 40% 70%, #141a14 0%, #080d08 70%); }
+    .slide:nth-child(5) { background: radial-gradient(ellipse at 50% 50%, #1f1a10 0%, #0c0a06 70%); }
+
+    /* Grain overlay */
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* Decorative line */
+    .slide-ornament {
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      margin: 0 auto 2.5rem;
+      opacity: 0.6;
+      transform: scaleX(0);
+      transition: transform 0.6s ease 0.4s;
+    }
+    .slide.active .slide-ornament { transform: scaleX(1); }
+
+    .slide-chapter {
+      font-family: 'Jost', sans-serif;
+      font-weight: 200;
+      font-size: clamp(0.65rem, 1.2vw, 0.75rem);
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+    }
+    .slide.active .slide-chapter { opacity: 1; transform: translateY(0); }
+
+    .slide-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.7s ease 0.35s, transform 0.7s ease 0.35s;
+    }
+    .slide.active .slide-title { opacity: 1; transform: translateY(0); }
+
+    .slide-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .slide-body {
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+      line-height: 1.85;
+      color: rgba(245,240,232,0.65);
+      max-width: 52ch;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+    }
+    .slide.active .slide-body { opacity: 1; transform: translateY(0); }
+
+    /* ── NAVIGATION ── */
+    #nav {
+      position: fixed;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background: none;
+      border: 1px solid rgba(200,169,110,0.3);
+      color: var(--gold);
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: none;
+      transition: border-color 0.3s, background 0.3s;
+      font-size: 1rem;
+    }
+    .nav-btn:hover {
+      border-color: var(--gold);
+      background: rgba(200,169,110,0.08);
+    }
+    .nav-btn:disabled { opacity: 0.2; pointer-events: none; }
+
+    #dots {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(200,169,110,0.25);
+      transition: background 0.3s, transform 0.3s;
+      cursor: none;
+    }
+    .dot.active {
+      background: var(--gold);
+      transform: scale(1.4);
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress, button  {
+      position: fixed;
+      top: 0; left: 0;
+      height: 1px;
+      background: var(--gold);
+      transition: width var(--slide-duration) ease;
+      z-index: 100;
+      opacity: 0.6;
+    }
+
+    /* ── SLIDE COUNT ── */
+    #counter {
+      position: fixed;
+      top: 2rem; right: 2.5rem;
+      font-family: 'Jost', sans-serif;
+      font-weight: 200;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: rgba(200,169,110,0.4);
+      z-index: 100;
+    }
+
+    /* ── KEYBOARD HINT ── */
+    #hint{
+      position: fixed;
+      bottom: 6.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(200,169,110,0.3);
+      transition: opacity 1s;
+    }
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+
+  <audio autoplay loop muted>
+     <source src="Alan.mp3" type="audio/mpeg"> 
+  </audio>
+ 
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div id="progress"></div>
+  <div id="counter">01 / 05</div>
+
+  <div id="stage">
+
+    <!-- ═══ SLIDE 1 ═══ -->
+    <div class="slide active">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter">by wark</div>
+      <h1 class="slide-title">Un homme se réveilla <br><em>dans un lit d'hôpital.</em></h1>
+      <p class="slide-body">
+           L'infirmière en face de lui affirma que c'était un miracle qu'il soit encore en vie 
+Que ça faisait quatre ans qu'il dormait.
+
+      </p>
+    </div>
+
+    <!-- ═══ SLIDE 2 ═══ -->
+    <div class="slide">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter"></div>
+      <h1 class="slide-title"> A sa sortie,<br> <em></em></h1>
+      <p class="slide-body">
+        tout lui semblait inconnue, les maisons, les visages, les noms, …
+L'amnésie s'était emprise de lui.
+      </p>
+    </div>
+
+    <!-- ═══ SLIDE 3 ═══ -->
+    <div class="slide">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter" ></div>
+      <h1 class="slide-title">Il prit donc l'habitude<br><em>de fréquenter un café.</em></h1>
+      <p class="slide-body">  
+       Non pas parce qu'ils servaient des boissons exceptionnelles mais parce qu'il y avait cette fille,
+        cette fille toujours assise à la même table, et qui commandais la même boisson, 
+        cette fille pas extraordinaire mais qui réussissait quand même a lui faire de l'effet malgré sa simplicité,
+         elle lui donnait toujours cette impression de vouloir se souvenir de quelque chose. 
+      </p>
+    </div>
+
+    <!-- ═══ SLIDE 4 ═══ -->
+    <div class="slide">
+      <div class="slide-chapter"></div>
+      <h1 class="slide-title">Les jours<br><em> passèrent</em></h1>
+      <p class="slide-body">
+ et ils finirent par se fréquenter, peu a peu il tomba amoureux, il tomba amoureux lentement mais profondément.
+Un soir alors qu'il lui avoua ses sentiments, elle lui révéla :
+      </p>
+    </div>
+
+    <!-- ═══ SLIDE 5 ═══ -->
+    <div class="slide">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter"></div>
+      <h1 class="slide-title"> « Tu sais,<br><em>on s'est déjà aimé autre fois,</em></h1>
+      <p class="slide-body">
+        on s'était déjà promis de rester ensemble avant que la route
+         ne brise notre promesse te plongeant dans un sommeil profond 
+         et que l'oublie s'empare de toi. Mais malgré tout je t'ai attendu…   
+      </p>
+    </div>
+
+    
+     <div class="slide">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter"></div>
+      <h1 class="slide-title">….je ne voulais pas<br><em>que tu m'aimes </em></h1>
+      <p class="slide-body">
+        à cause des promesses 
+       faites par le passe, manipuler tes sentiments avec des phrases d'antan .
+        Mais que tu m'aimes parce qu'une fois de plus c'est moi que tu choisi, 
+        qu'une fois de plus tu retombe amoureux de moi, 
+        je voulais savoir qu'aucune version de toi ne saurait aimer une autre que moi
+         non pas parce que je suis la plus belle mais juste parce que ton cœur aurait garde
+          en mémoire ce sentiment que l'on partageait déjà avant
+           et je suis sur dans nos vies antérieur aussi. »
+      </p>
+    </div>
+
+
+     <div class="slide">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter"></div>
+      <h1 class="slide-title"><br><em></em></h1>
+      <p class="slide-body">
+       il la fixa longuement, 
+       ne sachant quoi répondre puis l'embrassa passionnément 
+       car de la il l'aima encore bien plus fort. 
+      </p>
+    </div>
+
+      <div class="slide">
+      <div class="slide-ornament"></div>
+      <div class="slide-chapter"></div>
+      <h1 class="slide-title"> Est-ce donc çela <br><em> le vrai amour ?</em></h1>
+      <p class="slide-body">
+    
+  Celui-là qui nous pousse a choisir la même personne encore et encore ?
+ 
+      </p>
+    </div>
+
+  </div><!-- /stage -->
+
+  <div id="hint">↑ ↓ · flèches · molette</div>
+
+  <nav id="nav">
+    <button class="nav-btn" id="btnPrev" disabled aria-label="Précédent">&#8592;</button>
+    <div id="dots"></div>
+    <button class="nav-btn" id="btnNext" aria-label="Suivant" onclick="document.querySelector('audio').muted=false">&#8594;</button>
+  </nav>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    const slides = document.querySelectorAll('.slide');
+    const total  = slides.length;
+    let current  = 0;
+    let locked   = false;
+
+    // ── DOM refs ───────────────────────────────────────────
+    const progress  = document.getElementById('progress');
+    const counter   = document.getElementById('counter');
+    const btnPrev   = document.getElementById('btnPrev');
+    const btnNext   = document.getElementById('btnNext');
+    const dotsEl    = document.getElementById('dots');
+    const hint      = document.getElementById('hint');
+
+    // ── Build dots ─────────────────────────────────────────
+    slides.forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.addEventListener('click', () => goTo(i));
+      dotsEl.appendChild(d);
+    });
+    const dots = document.querySelectorAll('.dot');
+
+    // ── Go to slide ────────────────────────────────────────
+    function goTo(idx) {
+      if (idx === current || locked) return;
+      locked = true;
+
+      slides[current].classList.remove('active');
+      dots[current].classList.remove('active');
+
+      current = idx;
+
+      slides[current].classList.add('active');
+      dots[current].classList.add('active');
+
+      // Progress bar
+      progress.style.width = ((current / (total - 1)) * 100) + '%';
+
+      // Counter
+      const n = String(current + 1).padStart(2, '0');
+      const t = String(total).padStart(2, '0');
+      counter.textContent = n + ' / ' + t;
+
+      // Buttons
+      btnPrev.disabled = current === 0;
+      btnNext.disabled = current === total - 1;
+
+      setTimeout(() => { locked = false; }, 850);
+    }
+
+    function next() { if (current < total - 1) goTo(current + 1); }
+    function prev() { if (current > 0)         goTo(current - 1); }
+
+    // ── Controls ───────────────────────────────────────────
+    btnNext.addEventListener('click', next);
+    btnPrev.addEventListener('click', prev);
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') next();
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp'   || e.key === 'PageUp')   prev();
+    });
+
+    // Wheel / trackpad
+    let wheelTimer = null;
+    document.addEventListener('wheel', e => {
+      if (wheelTimer) return;
+      if (e.deltaY > 30)  next();
+      if (e.deltaY < -30) prev();
+      wheelTimer = setTimeout(() => { wheelTimer = null; }, 800);
+    }, { passive: true });
+
+    // Touch swipe
+    let touchStartY = 0;
+    document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const dy = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 40) { dy > 0 ? next() : prev(); }
+    });
+
+    // ── Custom cursor ──────────────────────────────────────
+    const cursor     = document.getElementById('cursor');
+    const cursorRing = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+    function animateCursor() {
+      cursor.style.left = mx + 'px';
+      cursor.style.top  = my + 'px';
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      cursorRing.style.left = rx + 'px';
+      cursorRing.style.top  = ry + 'px';
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // ── Hide hint after first interaction ──────────────────
+    function hideHint() {
+      hint.classList.add('hidden');
+      document.removeEventListener('keydown', hideHint);
+      document.removeEventListener('wheel',   hideHint);
+      document.removeEventListener('click',   hideHint);
+    }
+    document.addEventListener('keydown', hideHint);
+    document.addEventListener('wheel',   hideHint);
+    document.addEventListener('click',   hideHint);
+
+    // ── Init progress ──────────────────────────────────────
+    progress.style.width = '0%';
+  </script>
+</body>
+</html>
