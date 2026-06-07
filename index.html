@@ -231,10 +231,10 @@
   </style>
 </head>
 <body>
-
-  <audio autoplay loop muted>
-     <source src="Alan.mp3" type="audio/mpeg"> 
-  </audio>
+<audio id="audio" autoplay loop>
+  <source src="Alan.mp3" type="audio/mpeg">
+</audio>
+ 
  
   <div class="cursor" id="cursor"></div>
   <div class="cursor-ring" id="cursorRing"></div>
@@ -349,7 +349,7 @@ Un soir alors qu'il lui avoua ses sentiments, elle lui révéla :
   <nav id="nav">
     <button class="nav-btn" id="btnPrev" disabled aria-label="Précédent">&#8592;</button>
     <div id="dots"></div>
-    <button class="nav-btn" id="btnNext" aria-label="Suivant" onclick="document.querySelector('audio').muted=false">&#8594;</button>
+    <button class="nav-btn" id="btnNext" aria-label="Suivant" >&#8594;</button>
   </nav>
 
   <script>
