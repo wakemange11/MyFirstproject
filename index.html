@@ -464,6 +464,12 @@ Un soir alors qu'il lui avoua ses sentiments, elle lui révéla :
 
     // ── Init progress ──────────────────────────────────────
     progress.style.width = '0%';
+
+      document.addEventListener('click', function startAudio() {
+    const audio = document.getElementById('audio');
+    if (audio.paused) audio.play();
+    document.removeEventListener('click', startAudio);
+  }, { once: true });
   </script>
 </body>
 </html>
